@@ -36,5 +36,5 @@ func main() {
 	// initiate routes
 	routes.InitAPIRoutes(server)
 
-	log.Fatal(server.Listen(":80"))
+	log.Fatal(server.Listen(":8888"))
 }

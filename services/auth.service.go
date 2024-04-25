@@ -3,6 +3,7 @@ package services
 import (
 	"log"
 	"net/http"
+	"os"
 	"sendigi-server/configs"
 	"sendigi-server/repos"
 	"sendigi-server/utils"
@@ -88,7 +89,7 @@ func GoogleLoginCallbackService(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).SendString("Failed to initiate session")
 		}
 
-		return c.Redirect("/")
+		return c.Redirect(os.Getenv("CORS_CLIENT_URL"))
 	}
 
 	// Store the user's id in the session
@@ -109,5 +110,5 @@ func GoogleLoginCallbackService(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to clean up session")
 	}
 
-	return c.Redirect("/")
+	return c.Redirect(os.Getenv("CORS_CLIENT_URL"))
 }
