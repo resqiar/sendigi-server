@@ -18,4 +18,7 @@ func InitAPIRoutes(s *fiber.App) {
 	})
 
 	auth.Get("/logout", services.SendLogout)
+
+	user := s.Group("user")
+	user.Get("/profile", middlewares.ProtectedRoute, services.GetUserProfile)
 }

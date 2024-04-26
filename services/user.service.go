@@ -5,6 +5,8 @@ import (
 	"sendigi-server/entities"
 	"sendigi-server/repos"
 	"sendigi-server/utils"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func CreateUser(payload *dtos.GooglePayload) (*entities.User, error) {
@@ -24,4 +26,15 @@ func CreateUser(payload *dtos.GooglePayload) (*entities.User, error) {
 	}
 
 	return result, nil
+}
+
+func GetUserProfile(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	user, err := repos.FindUserByID(userID)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.JSON(user)
 }
