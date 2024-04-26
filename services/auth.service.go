@@ -89,7 +89,7 @@ func GoogleLoginCallbackService(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).SendString("Failed to initiate session")
 		}
 
-		return c.Redirect(os.Getenv("CORS_CLIENT_URL"))
+		return c.Redirect(os.Getenv("AUTH_REDIRECT_URL"))
 	}
 
 	// Store the user's id in the session
@@ -110,5 +110,17 @@ func GoogleLoginCallbackService(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to clean up session")
 	}
 
-	return c.Redirect(os.Getenv("CORS_CLIENT_URL"))
+	return c.Redirect(os.Getenv("AUTH_REDIRECT_URL"))
+}
+
+func SendLogout(c *fiber.Ctx) error {
+	sess, err := configs.SessionStore.Get(c)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// destroy current user session
+	sess.Destroy()
+
+	return c.SendStatus(fiber.StatusOK)
 }

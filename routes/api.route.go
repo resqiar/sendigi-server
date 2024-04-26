@@ -16,4 +16,6 @@ func InitAPIRoutes(s *fiber.App) {
 	auth.Get("/check", middlewares.ProtectedRoute, func(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusOK)
 	})
+
+	auth.Get("/logout", services.SendLogout)
 }
