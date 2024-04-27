@@ -1,10 +1,12 @@
 package services
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"sendigi-server/configs"
+	"sendigi-server/dtos"
 	"sendigi-server/repos"
 	"sendigi-server/utils"
 
@@ -123,4 +125,33 @@ func SendLogout(c *fiber.Ctx) error {
 	sess.Destroy()
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func MobileLoginCallbackService(c *fiber.Ctx) error {
+	rawPayload := c.Body()
+
+	var payload dtos.GooglePayload
+
+	err := json.Unmarshal([]byte(rawPayload), &payload)
+	if err != nil {
+		log.Println("Unmarshal Error:", err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// check if there is a user recorded with the same creds
+	existingUser, _ := repos.FindUserByEmail(payload.Email)
+	if existingUser == nil {
+		newUser, err := CreateUser(&payload)
+		if err != nil {
+			log.Printf("Failed to register user: %v", err)
+			return c.Status(fiber.StatusInternalServerError).SendString("Failed to register user")
+		}
+
+		// generate JWT token
+		token := utils.GenerateJWT(newUser.ID)
+		return c.JSON(fiber.Map{"token": token})
+	}
+
+	token := utils.GenerateJWT(existingUser.ID)
+	return c.JSON(fiber.Map{"token": token})
 }

@@ -21,4 +21,11 @@ func InitAPIRoutes(s *fiber.App) {
 
 	user := s.Group("user")
 	user.Get("/profile", middlewares.ProtectedRoute, services.GetUserProfile)
+
+	mobile := s.Group("mobile")
+	mobile.Post("/sync-user", services.MobileLoginCallbackService)
+	mobile.Post("/sync-device", middlewares.ProtectedMobile, services.MobileSyncDevice)
+
+	api := s.Group("api")
+	api.Get("/devices", middlewares.ProtectedRoute, services.MobileGetDevices)
 }
