@@ -10,8 +10,16 @@ import (
 func CreateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 	SQL := `
 		INSERT INTO app_info (
-			name, package_name, lock_status, icon, time_usage, author_id
-		) VALUES ($1, $2, $3, $4, $5, $6)
+			name,
+			package_name,
+			lock_status,
+			icon, 
+			time_usage, 
+			author_id, 
+			date_locked, 
+			time_start_locked, 
+			time_end_locked
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 	if _, err := configs.DB_POOL.Exec(
 		context.Background(),
@@ -22,6 +30,9 @@ func CreateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 		&payload.Icon,
 		&payload.TimeUsage,
 		&userID,
+		&payload.DateLocked,
+		&payload.TimeStartLocked,
+		&payload.TimeEndLocked,
 	); err != nil {
 		return err
 	}
@@ -35,7 +46,10 @@ func UpdateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 			SET name = $1,
 			lock_status = $3, 
 			icon = $4, 
-			time_usage = $5
+			time_usage = $5,
+			date_locked = $7, 
+			time_start_locked = $8, 
+			time_end_locked = $9
 		WHERE package_name = $2 AND author_id = $6
     `
 	if _, err := configs.DB_POOL.Exec(
@@ -47,6 +61,9 @@ func UpdateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 		&payload.Icon,
 		&payload.TimeUsage,
 		&userID,
+		&payload.DateLocked,
+		&payload.TimeStartLocked,
+		&payload.TimeEndLocked,
 	); err != nil {
 		return err
 	}
@@ -59,7 +76,15 @@ func FindAppByPackageName(packageName string) (*dtos.AppInfo, error) {
 
 	SQL := `
         SELECT 
-			id, name, package_name, lock_status, icon, time_usage
+			id, 
+			name, 
+			package_name, 
+			lock_status, 
+			icon, 
+			time_usage,
+			date_locked, 
+			time_start_locked, 
+			time_end_locked
         FROM app_info WHERE package_name = $1
     `
 	row := configs.DB_POOL.QueryRow(context.Background(), SQL, packageName)
@@ -70,6 +95,9 @@ func FindAppByPackageName(packageName string) (*dtos.AppInfo, error) {
 		&appInfo.LockStatus,
 		&appInfo.Icon,
 		&appInfo.TimeUsage,
+		&appInfo.DateLocked,
+		&appInfo.TimeStartLocked,
+		&appInfo.TimeEndLocked,
 	); err != nil {
 		log.Println(err)
 		return nil, err
@@ -83,7 +111,15 @@ func FindApps(userID string) ([]dtos.AppInfo, error) {
 
 	SQL := `
         SELECT 
-			id, name, package_name, lock_status, icon, time_usage
+			id, 
+			name, 
+			package_name, 
+			lock_status, 
+			icon, 
+			time_usage,
+			date_locked, 
+			time_start_locked, 
+			time_end_locked
         FROM app_info WHERE author_id = $1
     `
 	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID)
@@ -101,6 +137,9 @@ func FindApps(userID string) ([]dtos.AppInfo, error) {
 			&appInfo.LockStatus,
 			&appInfo.Icon,
 			&appInfo.TimeUsage,
+			&appInfo.DateLocked,
+			&appInfo.TimeStartLocked,
+			&appInfo.TimeEndLocked,
 		); err != nil {
 			log.Println(err)
 			return nil, err

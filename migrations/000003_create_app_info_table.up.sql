@@ -6,5 +6,10 @@ CREATE TABLE IF NOT EXISTS app_info (
     icon TEXT,
     time_usage BIGINT default 0,
     author_id UUID NOT NULL,
+
+    date_locked TEXT,
+    time_start_locked TEXT,
+    time_end_locked TEXT,
+
     FOREIGN KEY (author_id) REFERENCES users(id)
 );
