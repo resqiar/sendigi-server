@@ -71,6 +71,33 @@ func UpdateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 	return nil
 }
 
+func UpdateAppInfoWeb(payload *dtos.AppInfoInput, userID string) error {
+	SQL := `
+		UPDATE app_info
+			SET name = $1,
+			lock_status = $3, 
+			date_locked = $5, 
+			time_start_locked = $6, 
+			time_end_locked = $7
+		WHERE package_name = $2 AND author_id = $4
+    `
+	if _, err := configs.DB_POOL.Exec(
+		context.Background(),
+		SQL,
+		&payload.Name,
+		&payload.PackageName,
+		&payload.LockStatus,
+		&userID,
+		&payload.DateLocked,
+		&payload.TimeStartLocked,
+		&payload.TimeEndLocked,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func FindAppByPackageName(packageName string) (*dtos.AppInfo, error) {
 	var appInfo dtos.AppInfo
 

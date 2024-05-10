@@ -19,6 +19,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// redis connection
+	configs.InitRedis()
+
 	server := fiber.New()
 
 	// Setup CORS

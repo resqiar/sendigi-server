@@ -30,4 +30,5 @@ func InitAPIRoutes(s *fiber.App) {
 	api := s.Group("api")
 	api.Get("/devices", middlewares.ProtectedRoute, services.MobileGetDevices)
 	api.Get("/apps", middlewares.ProtectedRoute, services.MobileGetApps)
+	api.Post("/apps/update", middlewares.ProtectedRoute, services.WebUpdateApps)
 }

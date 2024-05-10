@@ -19,6 +19,7 @@ func InitSession() {
 		CookieSecure:   true,
 		CookieDomain:   CLIENT_DOMAIN,
 		CookiePath:     "/",
+		Storage:        RedisStore,
 	})
 }
 

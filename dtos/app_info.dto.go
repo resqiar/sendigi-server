@@ -17,7 +17,7 @@ type AppInfo struct {
 
 type AppInfoInput struct {
 	Name            string `json:"name"`
-	PackageName     string `json:"packageName"`
+	PackageName     string `json:"packageName" validate:"required"`
 	LockStatus      bool   `json:"lockStatus"`
 	Icon            string `json:"icon"`
 	TimeUsage       int64  `json:"timeUsage"`
