@@ -39,5 +39,5 @@ func main() {
 	// initiate routes
 	routes.InitAPIRoutes(server)
 
-	log.Fatal(server.Listen(":8888"))
+	log.Fatal(server.Listen(":" + os.Getenv("PORT")))
 }
