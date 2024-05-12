@@ -149,9 +149,15 @@ func MobileLoginCallbackService(c *fiber.Ctx) error {
 
 		// generate JWT token
 		token := utils.GenerateJWT(newUser.ID)
-		return c.JSON(fiber.Map{"token": token})
+		return c.JSON(fiber.Map{
+			"id":    newUser.ID,
+			"token": token,
+		})
 	}
 
 	token := utils.GenerateJWT(existingUser.ID)
-	return c.JSON(fiber.Map{"token": token})
+	return c.JSON(fiber.Map{
+		"id":    existingUser.ID,
+		"token": token,
+	})
 }
