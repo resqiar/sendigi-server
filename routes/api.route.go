@@ -5,9 +5,15 @@ import (
 	"sendigi-server/services"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
 )
 
 func InitAPIRoutes(s *fiber.App) {
+	// health monitor
+	s.Get("/health", monitor.New(monitor.Config{
+		Title: "SenDigi Monitoring System",
+	}))
+
 	auth := s.Group("auth")
 
 	auth.Get("/google", services.GoogleLoginService)
