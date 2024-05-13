@@ -11,3 +11,10 @@ type DeviceInfoInput struct {
 	BatteryLevel   int    `json:"batteryLevel"`
 	IsCharging     bool   `json:"isCharging"`
 }
+
+type DeviceActivityInput struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	PackageName string `json:"packageName"`
+	DeviceID    string `json:"deviceId"`
+}

@@ -35,6 +35,27 @@ func CreateDevice(payload *dtos.DeviceInfoInput, userID string) error {
 	return nil
 }
 
+func CreateDeviceActivity(payload *dtos.DeviceActivityInput, userID string) error {
+	SQL := `
+        INSERT INTO device_activity (
+            device_id, name, description, package_name, author_id
+        ) VALUES ($1, $2, $3, $4, $5)
+    `
+	if _, err := configs.DB_POOL.Exec(
+		context.Background(),
+		SQL,
+		&payload.DeviceID,
+		&payload.Name,
+		&payload.Description,
+		&payload.PackageName,
+		&userID,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func UpdateDevice(payload *dtos.DeviceInfoInput, userID string) error {
 	SQL := `
 		UPDATE device_info
@@ -126,4 +147,39 @@ func FindDevices(userID string) ([]entities.DeviceInfo, error) {
 	}
 
 	return deviceInfos, nil
+}
+
+func FindDeviceActivities(userID string) ([]entities.DeviceActivity, error) {
+	var deviceActivities []entities.DeviceActivity
+
+	SQL := `
+		SELECT
+            da.id, da.device_id, da.name, da.package_name, da.description, da.created_at, ai.icon
+        FROM device_activity AS da JOIN app_info AS ai ON da.package_name = ai.package_name WHERE da.author_id = $1;
+    `
+	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID)
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var deviceActivity entities.DeviceActivity
+
+		if err := rows.Scan(
+			&deviceActivity.ID,
+			&deviceActivity.DeviceID,
+			&deviceActivity.Name,
+			&deviceActivity.PackageName,
+			&deviceActivity.Description,
+			&deviceActivity.CreatedAt,
+			&deviceActivity.Icon,
+		); err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
+		deviceActivities = append(deviceActivities, deviceActivity)
+	}
+
+	return deviceActivities, nil
 }

@@ -46,10 +46,34 @@ func MobileSyncDevice(c *fiber.Ctx) error {
 	})
 }
 
+func MobileSyncDeviceActivity(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	rawPayload := c.Body()
+
+	var payload dtos.DeviceActivityInput
+
+	err := json.Unmarshal([]byte(rawPayload), &payload)
+	if err != nil {
+		log.Println("Unmarshal Error:", err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// check if the device already exist
+	if err := repos.CreateDeviceActivity(&payload, userID); err != nil {
+		log.Printf("Failed to insert device activity: %v", err)
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusInternalServerError,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status": fiber.StatusOK,
+	})
+}
+
 func MobileGetDevices(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
 
-	// check if the device already exist
 	devices, err := repos.FindDevices(userID)
 	if err != nil {
 		log.Printf("Failed to get devices: %v", err)
@@ -59,6 +83,20 @@ func MobileGetDevices(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"data": devices})
+}
+
+func MobileGetActivities(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	activities, err := repos.FindDeviceActivities(userID)
+	if err != nil {
+		log.Printf("Failed to get device activities: %v", err)
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusInternalServerError,
+		})
+	}
+
+	return c.JSON(fiber.Map{"data": activities})
 }
 
 func MobileSyncApp(c *fiber.Ctx) error {
