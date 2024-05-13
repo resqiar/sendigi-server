@@ -6,6 +6,7 @@ import (
 	"sendigi-server/configs"
 	"sendigi-server/routes"
 
+	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
@@ -37,6 +38,11 @@ func main() {
 	configs.InitGoogleConfig()
 	configs.InitSession()
 	configs.InitStateSession()
+
+	// Prometheus Monitoring
+	prometheus := fiberprometheus.New("sendigi-gateway")
+	prometheus.RegisterAt(server, "/metrics")
+	server.Use(prometheus.Middleware)
 
 	// initiate routes
 	routes.InitAPIRoutes(server)
