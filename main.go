@@ -21,6 +21,8 @@ func main() {
 
 	// redis connection
 	configs.InitRedis()
+	amqpCon := configs.InitRabbitMQ()
+	defer amqpCon.Close()
 
 	server := fiber.New()
 

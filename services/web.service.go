@@ -1,7 +1,9 @@
 package services
 
 import (
+	"encoding/json"
 	"log"
+	"sendigi-server/configs"
 	"sendigi-server/dtos"
 	"sendigi-server/repos"
 	"sendigi-server/utils"
@@ -40,5 +42,48 @@ func WebUpdateApps(c *fiber.Ctx) error {
 		})
 	}
 
+	// update message queue async-ly to trigger android device
+	go func() {
+		err := UpdateToMQ(userID, payload)
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func UpdateToMQ(userID string, payload dtos.AppInfoInput) error {
+	// get device information
+	devices, err := repos.FindDevices(userID)
+	if err != nil {
+		log.Printf("[Queue] Failed to get devices: %v", err)
+		return err
+	}
+
+	ch, err := configs.InitChannel()
+	if err != nil {
+		log.Printf("[Queue] Failed to init channel: %v", err)
+		return err
+	}
+
+	q, ctx, cancel, err := configs.InitMobileQueue(ch, userID, devices[0].ID)
+	if err != nil {
+		log.Printf("[Queue] Failed to init queue: %v", err)
+		return err
+	}
+	defer cancel()
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("[Queue] Failed to marshall payload: %v", err)
+		return err
+	}
+
+	if err := configs.SendToMQ(ch, q, ctx, jsonPayload); err != nil {
+		log.Printf("[Queue] Failed to send to queue: %v", err)
+		return err
+	}
+
+	return nil
 }
