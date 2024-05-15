@@ -33,6 +33,11 @@ func ValidateInput(payload any) string {
 				break
 			}
 
+			if err.Tag() == "oneof" && err.Field() == "Strategy" {
+				errMessage = err.StructField() + " field needs to be one of OFF, LOCKED, or ALL"
+				break
+			}
+
 			// raw error which is not covered above
 			errMessage = "Error on field " + err.StructField()
 		}
