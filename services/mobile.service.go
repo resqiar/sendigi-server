@@ -3,10 +3,18 @@ package services
 import (
 	"encoding/json"
 	"log"
+	"sendigi-server/configs"
+	"sendigi-server/constants"
 	"sendigi-server/dtos"
 	"sendigi-server/repos"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+)
+
+var (
+	lastInsertedTime    time.Time
+	lastInsertedPackage string
 )
 
 func MobileSyncDevice(c *fiber.Ctx) error {
@@ -58,6 +66,13 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
+	// check if last inserted time is < 3s
+	timeDiff := lastInsertedTime.Sub(time.Now())
+	if timeDiff.Seconds() < 3 && lastInsertedPackage == payload.PackageName {
+		lastInsertedTime = time.Now()
+		return c.SendStatus(fiber.StatusNoContent)
+	}
+
 	// check if the device already exist
 	if err := repos.CreateDeviceActivity(&payload, userID); err != nil {
 		log.Printf("Failed to insert device activity: %v", err)
@@ -66,9 +81,64 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		})
 	}
 
+	go func() {
+		config, err := repos.FindUserNotificationConfig(userID)
+		if err != nil {
+			log.Printf("Failed to get notification config: %v", err)
+		}
+
+		// if strategy for current user is off, just skip sending to mq
+		if config.Strategy == constants.NOTIF_STRATEGY_OFF {
+			return
+		}
+
+		appInfo, err := repos.FindAppByPackageName(payload.PackageName)
+		if err != nil {
+			log.Printf("Failed to get app by package name: %v", err)
+		}
+
+		switch {
+		case config.Strategy == constants.NOTIF_STRATEGY_LOCKED && appInfo.LockStatus:
+			sendToNotifMQ(userID, &payload)
+		case config.Strategy == constants.NOTIF_STRATEGY_ALL:
+			sendToNotifMQ(userID, &payload)
+		}
+	}()
+
+	lastInsertedTime = time.Now()
+	lastInsertedPackage = payload.PackageName
+
 	return c.JSON(fiber.Map{
 		"status": fiber.StatusOK,
 	})
+}
+
+func sendToNotifMQ(userID string, payload *dtos.DeviceActivityInput) error {
+	ch, err := configs.InitChannel()
+	if err != nil {
+		log.Printf("[Notif Queue] Failed to init channel: %v", err)
+		return err
+	}
+
+	q, ctx, cancel, err := configs.InitNotifQueue(ch, userID)
+	if err != nil {
+		log.Printf("[Notif Queue] Failed to init queue: %v", err)
+		return err
+	}
+	defer cancel()
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("[Notif Queue] Failed to marshall payload: %v", err)
+		return err
+	}
+
+	if err := configs.SendToNotifMQ(ch, q, ctx, jsonPayload); err != nil {
+		log.Printf("[Notif Queue] Failed to send to queue: %v", err)
+		return err
+	}
+
+	return nil
 }
 
 func MobileGetDevices(c *fiber.Ctx) error {

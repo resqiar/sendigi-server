@@ -1,0 +1,7 @@
+package constants
+
+const (
+	NOTIF_STRATEGY_OFF    = "OFF"
+	NOTIF_STRATEGY_LOCKED = "LOCKED"
+	NOTIF_STRATEGY_ALL    = "ALL"
+)
