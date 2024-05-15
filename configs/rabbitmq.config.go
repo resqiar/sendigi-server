@@ -12,6 +12,7 @@ import (
 
 var AMQPCON *amqp.Connection
 var MOBILE_DEVICE_XC = "mobile_devices"
+var NOTIFICATION_XC = "notification"
 
 func InitRabbitMQ() *amqp.Connection {
 	DSN := os.Getenv("RABBITMQ_URL")
@@ -42,6 +43,19 @@ func initExchanges() {
 		false,            // internal
 		false,            // no-wait
 		nil,              // arguments
+	)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Failed to Declare Exchanges: %s", err))
+	}
+
+	err = ch.ExchangeDeclare(
+		NOTIFICATION_XC, // name
+		"direct",        // type
+		true,            // durable
+		false,           // auto-deleted
+		false,           // internal
+		false,           // no-wait
+		nil,             // arguments
 	)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Failed to Declare Exchanges: %s", err))
@@ -83,6 +97,32 @@ func InitMobileQueue(ch *amqp.Channel, userID string, deviceID string) (*amqp.Qu
 	return &q, ctx, cancel, nil
 }
 
+func InitNotifQueue(ch *amqp.Channel, userID string) (*amqp.Queue, context.Context, context.CancelFunc, error) {
+	q, err := ch.QueueDeclare(
+		"notification",
+		false, // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
+	)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// bind queue to the exchange
+	if err := ch.QueueBind(q.Name, q.Name, NOTIFICATION_XC, false, nil); err != nil {
+		return nil, nil, nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if err != nil {
+		cancel()
+		return nil, nil, nil, err
+	}
+	return &q, ctx, cancel, nil
+}
+
 func SendToMQ(ch *amqp.Channel, q *amqp.Queue, ctx context.Context, payload []byte) error {
 	err := ch.PublishWithContext(
 		ctx,
@@ -90,6 +130,24 @@ func SendToMQ(ch *amqp.Channel, q *amqp.Queue, ctx context.Context, payload []by
 		q.Name,           // routing key
 		false,            // mandatory
 		false,            // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        payload,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SendToNotifMQ(ch *amqp.Channel, q *amqp.Queue, ctx context.Context, payload []byte) error {
+	err := ch.PublishWithContext(
+		ctx,
+		NOTIFICATION_XC, // exchange
+		q.Name,          // routing key
+		false,           // mandatory
+		false,           // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        payload,

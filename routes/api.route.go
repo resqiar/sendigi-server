@@ -39,4 +39,6 @@ func InitAPIRoutes(s *fiber.App) {
 	api.Get("/activities", middlewares.ProtectedRoute, services.MobileGetActivities)
 	api.Get("/apps", middlewares.ProtectedRoute, services.MobileGetApps)
 	api.Post("/apps/update", middlewares.ProtectedRoute, services.WebUpdateApps)
+	api.Get("/notification", middlewares.ProtectedRoute, services.GetNotificationConfig)
+	api.Post("/notification/update", middlewares.ProtectedRoute, services.UpdateNotificationConfig)
 }

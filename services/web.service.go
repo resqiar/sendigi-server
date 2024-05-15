@@ -87,3 +87,47 @@ func UpdateToMQ(userID string, payload dtos.AppInfoInput) error {
 
 	return nil
 }
+
+func GetNotificationConfig(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	config, err := repos.FindUserNotificationConfig(userID)
+	if err != nil {
+		log.Println("Error getting notification config:", err)
+		// send raw error (unprocessable entity)
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+
+	return c.JSON(fiber.Map{
+		"data": config,
+	})
+}
+
+func UpdateNotificationConfig(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	var payload dtos.NotificationConfigInput
+
+	// bind the body parser into payload
+	if err := c.BodyParser(&payload); err != nil {
+		log.Println("Parsing Error:", err)
+		// send raw error (unprocessable entity)
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+
+	// validate the payload using class-validator
+	if err := utils.ValidateInput(payload); err != "" {
+		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+			"error": err,
+		})
+	}
+
+	err := repos.UpdateUserNotificationConfig(&payload, userID)
+	if err != nil {
+		log.Println("Error updating notification config:", err)
+		// send raw error (unprocessable entity)
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}

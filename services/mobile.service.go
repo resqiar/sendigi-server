@@ -2,9 +2,13 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"sendigi-server/configs"
+	"sendigi-server/constants"
 	"sendigi-server/dtos"
 	"sendigi-server/repos"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -58,7 +62,29 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	// check if the device already exist
+	timeDiff, err := configs.RedisStore.Get(fmt.Sprintf("%s_last_inserted_time", userID))
+	if err != nil {
+		log.Println("Failed to retrieve redis value:", err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// if there is a last insertion before, if not, just skip the whole check
+	if string(timeDiff) != "" {
+		parsedDate, err := time.Parse(time.RFC3339, string(timeDiff))
+		if err != nil {
+			log.Println("Failed to parse redis value:", err)
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+
+		// check the last insertion time saved in redis.
+		// if time from the last caller is less than 3second,
+		// return as no content and just skip the next process entirely.
+		if time.Since(parsedDate).Seconds() < 3 {
+			configs.RedisStore.Set(fmt.Sprintf("%s_last_inserted_time", userID), []byte(time.Now().Format(time.RFC3339)), 1*time.Minute)
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+	}
+
 	if err := repos.CreateDeviceActivity(&payload, userID); err != nil {
 		log.Printf("Failed to insert device activity: %v", err)
 		return c.JSON(fiber.Map{
@@ -66,9 +92,70 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		})
 	}
 
+	go func() {
+		payload.CreatedAt = time.Now()
+
+		config, err := repos.FindUserNotificationConfig(userID)
+		if err != nil {
+			log.Printf("Failed to get notification config: %v", err)
+		}
+
+		// if strategy for current user is off, just skip sending to mq
+		if config.Strategy == constants.NOTIF_STRATEGY_OFF {
+			return
+		}
+
+		appInfo, err := repos.FindAppByPackageName(payload.PackageName)
+		if err != nil {
+			log.Printf("Failed to get app by package name: %v", err)
+		}
+
+		switch {
+		case config.Strategy == constants.NOTIF_STRATEGY_LOCKED && appInfo.LockStatus:
+			sendToNotifMQ(userID, &payload)
+		case config.Strategy == constants.NOTIF_STRATEGY_ALL:
+			sendToNotifMQ(userID, &payload)
+		}
+	}()
+
+	// set the key as inserted inside redis for max 10s
+	// why save it longer since the data itself only needed for 3s
+	configs.RedisStore.Set(fmt.Sprintf("%s_last_inserted_time", userID), []byte(time.Now().Format(time.RFC3339)), 10*time.Second)
+
 	return c.JSON(fiber.Map{
 		"status": fiber.StatusOK,
 	})
+}
+
+func sendToNotifMQ(userID string, payload *dtos.DeviceActivityInput) error {
+	// force addition of user id
+	payload.UserID = userID
+
+	ch, err := configs.InitChannel()
+	if err != nil {
+		log.Printf("[Notif Queue] Failed to init channel: %v", err)
+		return err
+	}
+
+	q, ctx, cancel, err := configs.InitNotifQueue(ch, userID)
+	if err != nil {
+		log.Printf("[Notif Queue] Failed to init queue: %v", err)
+		return err
+	}
+	defer cancel()
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("[Notif Queue] Failed to marshall payload: %v", err)
+		return err
+	}
+
+	if err := configs.SendToNotifMQ(ch, q, ctx, jsonPayload); err != nil {
+		log.Printf("[Notif Queue] Failed to send to queue: %v", err)
+		return err
+	}
+
+	return nil
 }
 
 func MobileGetDevices(c *fiber.Ctx) error {
