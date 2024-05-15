@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS notification_config (
     id SERIAL PRIMARY KEY,
 
     email TEXT,
-    email_status BOOLEAN DEFAULT false,
+    email_status BOOLEAN DEFAULT true,
     whatsapp TEXT,
     whatsapp_status BOOLEAN DEFAULT false,
 

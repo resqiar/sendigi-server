@@ -77,9 +77,9 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		}
 
 		// check the last insertion time saved in redis.
-		// if time from the last caller is less than 3second,
+		// if time from the last caller is less than 5 seconds,
 		// return as no content and just skip the next process entirely.
-		if time.Since(parsedDate).Seconds() < 3 {
+		if time.Since(parsedDate).Seconds() < 5 {
 			configs.RedisStore.Set(fmt.Sprintf("%s_last_inserted_time", userID), []byte(time.Now().Format(time.RFC3339)), 1*time.Minute)
 			return c.SendStatus(fiber.StatusNoContent)
 		}
