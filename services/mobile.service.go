@@ -85,7 +85,6 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		}
 	}
 
-	// check if the device already exist
 	if err := repos.CreateDeviceActivity(&payload, userID); err != nil {
 		log.Printf("Failed to insert device activity: %v", err)
 		return c.JSON(fiber.Map{
@@ -94,6 +93,8 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 	}
 
 	go func() {
+		payload.CreatedAt = time.Now()
+
 		config, err := repos.FindUserNotificationConfig(userID)
 		if err != nil {
 			log.Printf("Failed to get notification config: %v", err)
@@ -127,6 +128,9 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 }
 
 func sendToNotifMQ(userID string, payload *dtos.DeviceActivityInput) error {
+	// force addition of user id
+	payload.UserID = userID
+
 	ch, err := configs.InitChannel()
 	if err != nil {
 		log.Printf("[Notif Queue] Failed to init channel: %v", err)

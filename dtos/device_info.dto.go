@@ -1,5 +1,7 @@
 package dtos
 
+import "time"
+
 type DeviceInfoInput struct {
 	ID             string `json:"androidId"`
 	DeviceName     string `json:"deviceName"`
@@ -17,4 +19,6 @@ type DeviceActivityInput struct {
 	Description string `json:"description"`
 	PackageName string `json:"packageName"`
 	DeviceID    string `json:"deviceId"`
+	UserID      string
+	CreatedAt   time.Time
 }

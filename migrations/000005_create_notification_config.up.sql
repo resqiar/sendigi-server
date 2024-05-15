@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS notification_config (
     whatsapp TEXT,
     whatsapp_status BOOLEAN DEFAULT false,
 
-    strategy TEXT DEFAULT 'OFF',
+    strategy TEXT DEFAULT 'LOCKED',
     
     user_id UUID UNIQUE NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
