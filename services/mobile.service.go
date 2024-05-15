@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"sendigi-server/configs"
 	"sendigi-server/constants"
@@ -10,11 +11,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-)
-
-var (
-	lastInsertedTime    time.Time
-	lastInsertedPackage string
 )
 
 func MobileSyncDevice(c *fiber.Ctx) error {
@@ -66,11 +62,27 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	// check if last inserted time is < 3s
-	timeDiff := lastInsertedTime.Sub(time.Now())
-	if timeDiff.Seconds() < 3 && lastInsertedPackage == payload.PackageName {
-		lastInsertedTime = time.Now()
-		return c.SendStatus(fiber.StatusNoContent)
+	timeDiff, err := configs.RedisStore.Get(fmt.Sprintf("%s_last_inserted_time", userID))
+	if err != nil {
+		log.Println("Failed to retrieve redis value:", err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// if there is a last insertion before, if not, just skip the whole check
+	if string(timeDiff) != "" {
+		parsedDate, err := time.Parse(time.RFC3339, string(timeDiff))
+		if err != nil {
+			log.Println("Failed to parse redis value:", err)
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+
+		// check the last insertion time saved in redis.
+		// if time from the last caller is less than 3second,
+		// return as no content and just skip the next process entirely.
+		if time.Since(parsedDate).Seconds() < 3 {
+			configs.RedisStore.Set(fmt.Sprintf("%s_last_inserted_time", userID), []byte(time.Now().Format(time.RFC3339)), 1*time.Minute)
+			return c.SendStatus(fiber.StatusNoContent)
+		}
 	}
 
 	// check if the device already exist
@@ -105,8 +117,9 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		}
 	}()
 
-	lastInsertedTime = time.Now()
-	lastInsertedPackage = payload.PackageName
+	// set the key as inserted inside redis for max 10s
+	// why save it longer since the data itself only needed for 3s
+	configs.RedisStore.Set(fmt.Sprintf("%s_last_inserted_time", userID), []byte(time.Now().Format(time.RFC3339)), 10*time.Second)
 
 	return c.JSON(fiber.Map{
 		"status": fiber.StatusOK,
