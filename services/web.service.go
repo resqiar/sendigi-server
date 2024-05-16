@@ -44,7 +44,7 @@ func WebUpdateApps(c *fiber.Ctx) error {
 
 	// update message queue async-ly to trigger android device
 	go func() {
-		err := UpdateToMQ(userID, payload)
+		err := SendStateToMobile(userID, payload)
 		if err != nil {
 			log.Println(err)
 		}
@@ -53,7 +53,7 @@ func WebUpdateApps(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func UpdateToMQ(userID string, payload dtos.AppInfoInput) error {
+func SendStateToMobile(userID string, payload dtos.AppInfoInput) error {
 	// get device information
 	devices, err := repos.FindDevices(userID)
 	if err != nil {
@@ -80,6 +80,7 @@ func UpdateToMQ(userID string, payload dtos.AppInfoInput) error {
 		return err
 	}
 
+	// send to mobile queue
 	if err := configs.SendToMQ(ch, q, ctx, jsonPayload); err != nil {
 		log.Printf("[Queue] Failed to send to queue: %v", err)
 		return err

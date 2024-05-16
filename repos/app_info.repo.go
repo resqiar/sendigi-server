@@ -98,7 +98,7 @@ func UpdateAppInfoWeb(payload *dtos.AppInfoInput, userID string) error {
 	return nil
 }
 
-func FindAppByPackageName(packageName string) (*dtos.AppInfo, error) {
+func FindAppByPackageName(packageName string, userId string) (*dtos.AppInfo, error) {
 	var appInfo dtos.AppInfo
 
 	SQL := `
@@ -112,9 +112,9 @@ func FindAppByPackageName(packageName string) (*dtos.AppInfo, error) {
 			date_locked, 
 			time_start_locked, 
 			time_end_locked
-        FROM app_info WHERE package_name = $1
+        FROM app_info WHERE package_name = $1 AND author_id = $2
     `
-	row := configs.DB_POOL.QueryRow(context.Background(), SQL, packageName)
+	row := configs.DB_POOL.QueryRow(context.Background(), SQL, packageName, userId)
 	if err := row.Scan(
 		&appInfo.ID,
 		&appInfo.Name,

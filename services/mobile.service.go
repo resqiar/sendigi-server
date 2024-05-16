@@ -106,7 +106,7 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 			return
 		}
 
-		appInfo, err := repos.FindAppByPackageName(payload.PackageName)
+		appInfo, err := repos.FindAppByPackageName(payload.PackageName, userID)
 		if err != nil {
 			log.Printf("Failed to get app by package name: %v", err)
 		}
@@ -213,7 +213,7 @@ func MobileSyncApp(c *fiber.Ctx) error {
 	payload.Icon = url
 
 	// check if the app already exist
-	existingApp, _ := repos.FindAppByPackageName(payload.PackageName)
+	existingApp, _ := repos.FindAppByPackageName(payload.PackageName, userID)
 	if existingApp == nil { // app info is new
 		err = repos.CreateAppInfo(&payload, userID)
 		if err != nil {
