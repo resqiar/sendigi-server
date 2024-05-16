@@ -8,6 +8,7 @@ import (
 	"sendigi-server/constants"
 	"sendigi-server/dtos"
 	"sendigi-server/repos"
+	"sendigi-server/utils"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -200,20 +201,31 @@ func MobileSyncApp(c *fiber.Ctx) error {
 		})
 	}
 
-	// check if the device already exist
+	url, err := utils.UploadImages(payload.Icon, payload.PackageName)
+	if err != nil {
+		log.Println("Error Uploading Icon:", err)
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusInternalServerError,
+		})
+	}
+
+	// force icon to use remotely stored icon
+	payload.Icon = url
+
+	// check if the app already exist
 	existingApp, _ := repos.FindAppByPackageName(payload.PackageName)
 	if existingApp == nil { // app info is new
-		err := repos.CreateAppInfo(&payload, userID)
+		err = repos.CreateAppInfo(&payload, userID)
 		if err != nil {
-			log.Printf("Failed to register device: %v", err)
+			log.Printf("Failed to register app info: %v", err)
 			return c.JSON(fiber.Map{
 				"status": fiber.StatusInternalServerError,
 			})
 		}
-	} else { // device info is present and need to be updated
+	} else { // app info is present and need to be updated
 		err := repos.UpdateAppInfo(&payload, userID)
 		if err != nil {
-			log.Printf("Failed to update device: %v", err)
+			log.Printf("Failed to update app info: %v", err)
 			return c.JSON(fiber.Map{
 				"status": fiber.StatusInternalServerError,
 			})
