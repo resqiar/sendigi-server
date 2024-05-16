@@ -109,6 +109,7 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		appInfo, err := repos.FindAppByPackageName(payload.PackageName, userID)
 		if err != nil {
 			log.Printf("Failed to get app by package name: %v", err)
+			return
 		}
 
 		switch {
