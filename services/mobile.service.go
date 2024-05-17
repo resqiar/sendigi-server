@@ -209,20 +209,20 @@ func MobileSyncApp(c *fiber.Ctx) error {
 		})
 	}
 
-	url, err := utils.UploadImages(payload.Icon, payload.PackageName)
-	if err != nil {
-		log.Println("Error Uploading Icon:", err)
-		return c.JSON(fiber.Map{
-			"status": fiber.StatusInternalServerError,
-		})
-	}
-
-	// force icon to use remotely stored icon
-	payload.Icon = url
-
 	// check if the app already exist
 	existingApp, _ := repos.FindAppByPackageName(payload.PackageName, userID)
 	if existingApp == nil { // app info is new
+		url, err := utils.UploadImages(payload.Icon, payload.PackageName)
+		if err != nil {
+			log.Println("Error Uploading Icon:", err)
+			return c.JSON(fiber.Map{
+				"status": fiber.StatusInternalServerError,
+			})
+		}
+
+		// force icon to use remotely stored icon
+		payload.Icon = url
+
 		err = repos.CreateAppInfo(&payload, userID)
 		if err != nil {
 			log.Printf("Failed to register app info: %v", err)

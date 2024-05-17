@@ -45,12 +45,11 @@ func UpdateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 		UPDATE app_info
 			SET name = $1,
 			lock_status = $3, 
-			icon = $4, 
-			time_usage = $5,
-			date_locked = $7, 
-			time_start_locked = $8, 
-			time_end_locked = $9
-		WHERE package_name = $2 AND author_id = $6
+			time_usage = $4,
+			date_locked = $6, 
+			time_start_locked = $7, 
+			time_end_locked = $8
+		WHERE package_name = $2 AND author_id = $5
     `
 	if _, err := configs.DB_POOL.Exec(
 		context.Background(),
@@ -58,7 +57,6 @@ func UpdateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 		&payload.Name,
 		&payload.PackageName,
 		&payload.LockStatus,
-		&payload.Icon,
 		&payload.TimeUsage,
 		&userID,
 		&payload.DateLocked,
