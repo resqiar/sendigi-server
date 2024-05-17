@@ -93,8 +93,12 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 		})
 	}
 
+	payloadChan := make(chan dtos.DeviceActivityInput)
+
 	go func() {
-		payload.CreatedAt = time.Now()
+		payloadCopy := <-payloadChan
+
+		payloadCopy.CreatedAt = time.Now()
 
 		config, err := repos.FindUserNotificationConfig(userID)
 		if err != nil {
@@ -106,7 +110,7 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 			return
 		}
 
-		appInfo, err := repos.FindAppByPackageName(payload.PackageName, userID)
+		appInfo, err := repos.FindAppByPackageName(payloadCopy.PackageName, userID)
 		if err != nil {
 			log.Printf("Failed to get app by package name: %v", err)
 			return
@@ -119,6 +123,9 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 			sendToNotifMQ(userID, &payload)
 		}
 	}()
+
+	// Send the original payload to the channel
+	payloadChan <- payload
 
 	// set the key as inserted inside redis for max 10s
 	// why save it longer since the data itself only needed for 3s
