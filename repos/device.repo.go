@@ -155,7 +155,7 @@ func FindDeviceActivities(userID string) ([]entities.DeviceActivity, error) {
 	SQL := `
 		SELECT
             da.id, da.device_id, da.name, da.package_name, da.description, da.created_at, ai.icon
-        FROM device_activity AS da JOIN app_info AS ai ON da.package_name = ai.package_name WHERE da.author_id = $1;
+        FROM device_activity AS da JOIN app_info AS ai ON da.package_name = ai.package_name WHERE da.author_id = $1 ORDER BY da.created_at DESC;
     `
 	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID)
 	defer rows.Close()

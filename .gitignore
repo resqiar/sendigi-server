@@ -28,3 +28,5 @@ tmp
 
 # Env vars
 .env
+
+bin/

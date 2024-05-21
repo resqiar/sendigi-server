@@ -42,18 +42,32 @@ func WebUpdateApps(c *fiber.Ctx) error {
 		})
 	}
 
+	type State struct {
+		userID  string
+		payload *dtos.AppInfoInput
+	}
+
+	payloadChan := make(chan State)
+
 	// update message queue async-ly to trigger android device
 	go func() {
-		err := SendStateToMobile(userID, payload)
+		data := <-payloadChan
+
+		err := SendStateToMobile(data.userID, data.payload)
 		if err != nil {
 			log.Println(err)
 		}
 	}()
 
+	payloadChan <- State{
+		userID:  userID,
+		payload: &payload,
+	}
+
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func SendStateToMobile(userID string, payload dtos.AppInfoInput) error {
+func SendStateToMobile(userID string, payload *dtos.AppInfoInput) error {
 	// get device information
 	devices, err := repos.FindDevices(userID)
 	if err != nil {

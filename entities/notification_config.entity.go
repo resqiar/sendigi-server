@@ -8,5 +8,7 @@ type NotificationConfig struct {
 	EmailStatus    bool
 	Whatsapp       sql.NullString
 	WhatsappStatus bool
+	Telegram       sql.NullString
+	TelegramStatus bool
 	Strategy       string
 }

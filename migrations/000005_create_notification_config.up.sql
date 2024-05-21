@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS notification_config (
     email_status BOOLEAN DEFAULT true,
     whatsapp TEXT,
     whatsapp_status BOOLEAN DEFAULT false,
+    telegram TEXT,
+    telegram_status BOOLEAN DEFAULT false,
 
     strategy TEXT DEFAULT 'LOCKED',
     

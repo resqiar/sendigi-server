@@ -96,6 +96,9 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 	payloadChan := make(chan dtos.DeviceActivityInput)
 
 	go func() {
+		// get the payload from the channel,
+		// if the channel is not having any value yet, it will block the goroutine
+		// until the payload is present and vice versa.
 		payloadCopy := <-payloadChan
 
 		payloadCopy.CreatedAt = time.Now()

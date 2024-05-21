@@ -145,7 +145,7 @@ func FindApps(userID string) ([]dtos.AppInfo, error) {
 			date_locked, 
 			time_start_locked, 
 			time_end_locked
-        FROM app_info WHERE author_id = $1
+        FROM app_info WHERE author_id = $1 ORDER BY time_usage DESC
     `
 	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID)
 	defer rows.Close()

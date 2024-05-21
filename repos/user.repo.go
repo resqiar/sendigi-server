@@ -80,7 +80,7 @@ func FindUserByID(id string) (*entities.User, error) {
 func FindUserNotificationConfig(userId string) (*entities.NotificationConfig, error) {
 	var config entities.NotificationConfig
 
-	SQL := "SELECT id, email, email_status, whatsapp, whatsapp_status, strategy FROM notification_config WHERE user_id = $1"
+	SQL := "SELECT id, email, email_status, whatsapp, whatsapp_status, telegram, telegram_status, strategy FROM notification_config WHERE user_id = $1"
 	row := configs.DB_POOL.QueryRow(context.Background(), SQL, userId)
 	if err := row.Scan(
 		&config.ID,
@@ -88,6 +88,8 @@ func FindUserNotificationConfig(userId string) (*entities.NotificationConfig, er
 		&config.EmailStatus,
 		&config.Whatsapp,
 		&config.WhatsappStatus,
+		&config.Telegram,
+		&config.TelegramStatus,
 		&config.Strategy,
 	); err != nil {
 		return nil, err
@@ -103,8 +105,10 @@ func UpdateUserNotificationConfig(payload *dtos.NotificationConfigInput, userID 
 			email_status = $2, 
 			whatsapp = $3, 
 			whatsapp_status = $4,
-			strategy = $5
-		WHERE user_id = $6
+			telegram = $5, 
+			telegram_status = $6,
+			strategy = $7
+		WHERE user_id = $8
     `
 	if _, err := configs.DB_POOL.Exec(
 		context.Background(),
@@ -113,6 +117,8 @@ func UpdateUserNotificationConfig(payload *dtos.NotificationConfigInput, userID 
 		&payload.EmailStatus,
 		&payload.Whatsapp,
 		&payload.WhatsappStatus,
+		&payload.Telegram,
+		&payload.TelegramStatus,
 		&payload.Strategy,
 		&userID,
 	); err != nil {
