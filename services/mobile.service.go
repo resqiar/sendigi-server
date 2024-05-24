@@ -213,8 +213,8 @@ func MobileSyncApp(c *fiber.Ctx) error {
 	}
 
 	// check if the app already exist
-	existingApp, _ := repos.FindAppByPackageName(payload.PackageName, userID)
-	if existingApp == nil { // app info is new
+	existingApp, err := repos.FindAppByPackageName(payload.PackageName, userID)
+	if existingApp == nil || err != nil { // app info is new
 		url, err := utils.UploadImages(payload.Icon, payload.PackageName)
 		if err != nil {
 			log.Println("Error Uploading Icon:", err)
