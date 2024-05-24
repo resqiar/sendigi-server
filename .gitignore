@@ -30,3 +30,5 @@ tmp
 .env
 
 bin/
+
+logfile

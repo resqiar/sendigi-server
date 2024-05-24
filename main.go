@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
 )
 
@@ -43,6 +44,18 @@ func main() {
 	// Compression
 	server.Use(compress.New(compress.Config{
 		Level: compress.LevelBestCompression,
+	}))
+
+	// Init logger
+	logFile, err := os.OpenFile("./logfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal("error opening log file", err)
+	}
+	defer logFile.Close()
+	server.Use(logger.New(logger.Config{
+		Format:        "[${time}] ${ip}:${port} ${status} - ${method} ${path} | ${latency} \n",
+		DisableColors: true,
+		Output:        logFile,
 	}))
 
 	// Prometheus Monitoring
