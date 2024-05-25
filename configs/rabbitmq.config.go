@@ -75,7 +75,7 @@ func InitMobileQueue(ch *amqp.Channel, userID string, deviceID string) (*amqp.Qu
 	q, err := ch.QueueDeclare(
 		fmt.Sprintf("%s_%s", userID, deviceID),
 		false, // durable
-		true,  // delete when unused
+		false, // delete when unused
 		false, // exclusive
 		false, // no-wait
 		nil,   // arguments
