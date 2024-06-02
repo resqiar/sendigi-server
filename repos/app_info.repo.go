@@ -131,6 +131,50 @@ func FindAppByPackageName(packageName string, userId string) (*dtos.AppInfo, err
 	return &appInfo, nil
 }
 
+func ResetAppLockByPackageName(packageName string, userID string) error {
+	SQL := `
+		UPDATE app_info
+			SET lock_status = $1, 
+			date_locked = $2, 
+			time_start_locked = $3, 
+			time_end_locked = $4
+		WHERE package_name = $5 AND author_id = $6
+    `
+	if _, err := configs.DB_POOL.Exec(
+		context.Background(),
+		SQL,
+		false,
+		"",
+		"",
+		"",
+		packageName,
+		userID,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SetAppLockByPackageName(packageName string, userID string) error {
+	SQL := `
+		UPDATE app_info
+			SET lock_status = $1
+		WHERE package_name = $2 AND author_id = $3
+    `
+	if _, err := configs.DB_POOL.Exec(
+		context.Background(),
+		SQL,
+		true,
+		packageName,
+		userID,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func FindApps(userID string) ([]dtos.AppInfo, error) {
 	var appInfos []dtos.AppInfo
 

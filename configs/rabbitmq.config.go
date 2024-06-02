@@ -97,6 +97,32 @@ func InitMobileQueue(ch *amqp.Channel, userID string, deviceID string) (*amqp.Qu
 	return &q, ctx, cancel, nil
 }
 
+func InitMessageQueue(ch *amqp.Channel, userID string, deviceID string) (*amqp.Queue, context.Context, context.CancelFunc, error) {
+	q, err := ch.QueueDeclare(
+		fmt.Sprintf("message_%s_%s", userID, deviceID),
+		false, // durable
+		true,  // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
+	)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// bind queue to the exchange
+	if err := ch.QueueBind(q.Name, q.Name, MOBILE_DEVICE_XC, false, nil); err != nil {
+		return nil, nil, nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if err != nil {
+		cancel()
+		return nil, nil, nil, err
+	}
+	return &q, ctx, cancel, nil
+}
+
 func InitNotifQueue(ch *amqp.Channel, userID string) (*amqp.Queue, context.Context, context.CancelFunc, error) {
 	q, err := ch.QueueDeclare(
 		"notification",

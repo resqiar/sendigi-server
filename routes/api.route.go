@@ -33,6 +33,7 @@ func InitAPIRoutes(s *fiber.App) {
 	mobile.Post("/sync-device", middlewares.ProtectedMobile, services.MobileSyncDevice)
 	mobile.Post("/sync-device-activity", middlewares.ProtectedMobile, services.MobileSyncDeviceActivity)
 	mobile.Post("/sync-app", middlewares.ProtectedMobile, services.MobileSyncApp)
+	mobile.Post("/message/request", middlewares.ProtectedMobile, services.MobileCreateRequestMessage)
 
 	api := s.Group("api")
 	api.Get("/devices", middlewares.ProtectedRoute, services.MobileGetDevices)
@@ -41,4 +42,6 @@ func InitAPIRoutes(s *fiber.App) {
 	api.Post("/apps/update", middlewares.ProtectedRoute, services.WebUpdateApps)
 	api.Get("/notification", middlewares.ProtectedRoute, services.GetNotificationConfig)
 	api.Post("/notification/update", middlewares.ProtectedRoute, services.UpdateNotificationConfig)
+	api.Get("/message", middlewares.ProtectedRoute, services.MobileGetRequestMessages)
+	api.Post("/message/send", middlewares.ProtectedRoute, services.MessageMobile)
 }

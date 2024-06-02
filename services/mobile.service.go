@@ -262,3 +262,48 @@ func MobileGetApps(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"data": devices})
 }
+
+func MobileCreateRequestMessage(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	var payload dtos.RequestMessageInput
+
+	// bind the body parser into payload
+	if err := c.BodyParser(&payload); err != nil {
+		log.Println("Parsing Error:", err)
+		// send raw error (unprocessable entity)
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+
+	// validate the payload using class-validator
+	if err := utils.ValidateInput(payload); err != "" {
+		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+			"error": err,
+		})
+	}
+
+	if err := repos.CreateRequestMessage(&payload, userID); err != nil {
+		log.Printf("Failed to insert device activity: %v", err)
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusInternalServerError,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status": fiber.StatusOK,
+	})
+}
+
+func MobileGetRequestMessages(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	messages, err := repos.FindRequestMessages(userID)
+	if err != nil {
+		log.Printf("Failed to get request messages: %v", err)
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusInternalServerError,
+		})
+	}
+
+	return c.JSON(fiber.Map{"data": messages})
+}
