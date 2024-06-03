@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS app_info (
     date_locked TEXT,
     time_start_locked TEXT,
     time_end_locked TEXT,
+    recurring TEXT,
 
     FOREIGN KEY (author_id) REFERENCES users(id)
 );

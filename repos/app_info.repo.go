@@ -18,8 +18,9 @@ func CreateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 			author_id, 
 			date_locked, 
 			time_start_locked, 
-			time_end_locked
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			time_end_locked,
+			recurring
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 	if _, err := configs.DB_POOL.Exec(
 		context.Background(),
@@ -33,6 +34,7 @@ func CreateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 		&payload.DateLocked,
 		&payload.TimeStartLocked,
 		&payload.TimeEndLocked,
+		&payload.Recurring,
 	); err != nil {
 		return err
 	}
@@ -48,7 +50,8 @@ func UpdateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 			time_usage = $4,
 			date_locked = $6, 
 			time_start_locked = $7, 
-			time_end_locked = $8
+			time_end_locked = $8,
+			recurring = $9
 		WHERE package_name = $2 AND author_id = $5
     `
 	if _, err := configs.DB_POOL.Exec(
@@ -62,6 +65,7 @@ func UpdateAppInfo(payload *dtos.AppInfoInput, userID string) error {
 		&payload.DateLocked,
 		&payload.TimeStartLocked,
 		&payload.TimeEndLocked,
+		&payload.Recurring,
 	); err != nil {
 		return err
 	}
@@ -76,7 +80,8 @@ func UpdateAppInfoWeb(payload *dtos.AppInfoInput, userID string) error {
 			lock_status = $3, 
 			date_locked = $5, 
 			time_start_locked = $6, 
-			time_end_locked = $7
+			time_end_locked = $7,
+			recurring = $8
 		WHERE package_name = $2 AND author_id = $4
     `
 	if _, err := configs.DB_POOL.Exec(
@@ -89,6 +94,7 @@ func UpdateAppInfoWeb(payload *dtos.AppInfoInput, userID string) error {
 		&payload.DateLocked,
 		&payload.TimeStartLocked,
 		&payload.TimeEndLocked,
+		&payload.Recurring,
 	); err != nil {
 		return err
 	}
@@ -109,7 +115,8 @@ func FindAppByPackageName(packageName string, userId string) (*dtos.AppInfo, err
 			time_usage,
 			date_locked, 
 			time_start_locked, 
-			time_end_locked
+			time_end_locked,
+			recurring
         FROM app_info WHERE package_name = $1 AND author_id = $2
     `
 	row := configs.DB_POOL.QueryRow(context.Background(), SQL, packageName, userId)
@@ -123,6 +130,7 @@ func FindAppByPackageName(packageName string, userId string) (*dtos.AppInfo, err
 		&appInfo.DateLocked,
 		&appInfo.TimeStartLocked,
 		&appInfo.TimeEndLocked,
+		&appInfo.Recurring,
 	); err != nil {
 		log.Println(err)
 		return nil, err
@@ -188,7 +196,8 @@ func FindApps(userID string) ([]dtos.AppInfo, error) {
 			time_usage,
 			date_locked, 
 			time_start_locked, 
-			time_end_locked
+			time_end_locked,
+			recurring
         FROM app_info WHERE author_id = $1 ORDER BY time_usage DESC
     `
 	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID)
@@ -209,6 +218,7 @@ func FindApps(userID string) ([]dtos.AppInfo, error) {
 			&appInfo.DateLocked,
 			&appInfo.TimeStartLocked,
 			&appInfo.TimeEndLocked,
+			&appInfo.Recurring,
 		); err != nil {
 			log.Println(err)
 			return nil, err
