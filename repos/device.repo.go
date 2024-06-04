@@ -149,15 +149,43 @@ func FindDevices(userID string) ([]entities.DeviceInfo, error) {
 	return deviceInfos, nil
 }
 
-func FindDeviceActivities(userID string) ([]entities.DeviceActivity, error) {
+func FindDevice(userID string, deviceID string) (*entities.DeviceInfo, error) {
+	var deviceInfo entities.DeviceInfo
+
+	SQL := `
+        SELECT 
+            id, device_name, device_brand, api_level, android_version,
+            manufacturer, product_name, battery_level, is_charging
+        FROM device_info WHERE author_id = $1 AND id = $2
+    `
+	row := configs.DB_POOL.QueryRow(context.Background(), SQL, userID, deviceID)
+	if err := row.Scan(
+		&deviceInfo.ID,
+		&deviceInfo.DeviceName,
+		&deviceInfo.DeviceBrand,
+		&deviceInfo.APILevel,
+		&deviceInfo.AndroidVersion,
+		&deviceInfo.Manufacturer,
+		&deviceInfo.ProductName,
+		&deviceInfo.BatteryLevel,
+		&deviceInfo.IsCharging,
+	); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return &deviceInfo, nil
+}
+
+func FindDeviceActivities(userID string, deviceID string) ([]entities.DeviceActivity, error) {
 	var deviceActivities []entities.DeviceActivity
 
 	SQL := `
 		SELECT
             da.id, da.device_id, da.name, da.package_name, da.description, da.created_at, ai.icon
-        FROM device_activity AS da JOIN app_info AS ai ON da.package_name = ai.package_name WHERE da.author_id = $1 ORDER BY da.created_at DESC;
+        FROM device_activity AS da JOIN app_info AS ai ON da.package_name = ai.package_name WHERE da.author_id = $1 AND da.device_id = $2 ORDER BY da.created_at DESC;
     `
-	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID)
+	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID, deviceID)
 	defer rows.Close()
 	if err != nil {
 		return nil, err

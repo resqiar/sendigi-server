@@ -14,6 +14,7 @@ type AppInfo struct {
 	TimeEndLocked   sql.NullString
 	Recurring       string
 	AuthorID        string
+	DeviceID        string
 }
 
 type AppInfoInput struct {
@@ -26,4 +27,5 @@ type AppInfoInput struct {
 	TimeStartLocked string `json:"timeStartLocked"`
 	TimeEndLocked   string `json:"timeEndLocked"`
 	Recurring       string `json:"recurring" validate:"oneof=TIME DATE DAY"`
+	DeviceID        string `json:"deviceID" validate:"required"`
 }

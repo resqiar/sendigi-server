@@ -37,11 +37,12 @@ func InitAPIRoutes(s *fiber.App) {
 
 	api := s.Group("api")
 	api.Get("/devices", middlewares.ProtectedRoute, services.MobileGetDevices)
+	api.Get("/device/:id", middlewares.ProtectedRoute, services.MobileGetDevice)
 	api.Get("/activities", middlewares.ProtectedRoute, services.MobileGetActivities)
 	api.Get("/apps", middlewares.ProtectedRoute, services.MobileGetApps)
 	api.Post("/apps/update", middlewares.ProtectedRoute, services.WebUpdateApps)
 	api.Get("/notification", middlewares.ProtectedRoute, services.GetNotificationConfig)
 	api.Post("/notification/update", middlewares.ProtectedRoute, services.UpdateNotificationConfig)
-	api.Get("/message", middlewares.ProtectedRoute, services.MobileGetRequestMessages)
+	api.Get("/message/:id", middlewares.ProtectedRoute, services.MobileGetRequestMessages)
 	api.Post("/message/send", middlewares.ProtectedRoute, services.MessageMobile)
 }

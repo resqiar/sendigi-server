@@ -113,7 +113,7 @@ func MobileSyncDeviceActivity(c *fiber.Ctx) error {
 			return
 		}
 
-		appInfo, err := repos.FindAppByPackageName(payloadCopy.PackageName, userID)
+		appInfo, err := repos.FindAppByPackageName(payloadCopy.PackageName, userID, payloadCopy.DeviceID)
 		if err != nil {
 			log.Printf("Failed to get app by package name: %v", err)
 			return
@@ -184,10 +184,38 @@ func MobileGetDevices(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": devices})
 }
 
+func MobileGetDevice(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	deviceID := c.Params("id")
+
+	if deviceID == "" {
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusNotFound,
+		})
+	}
+
+	device, err := repos.FindDevice(userID, deviceID)
+	if err != nil {
+		log.Printf("Failed to get device: %v", err)
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusNotFound,
+		})
+	}
+
+	return c.JSON(fiber.Map{"data": device})
+}
+
 func MobileGetActivities(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
+	deviceID := c.Query("device_id")
 
-	activities, err := repos.FindDeviceActivities(userID)
+	if deviceID == "" {
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusNotFound,
+		})
+	}
+
+	activities, err := repos.FindDeviceActivities(userID, deviceID)
 	if err != nil {
 		log.Printf("Failed to get device activities: %v", err)
 		return c.JSON(fiber.Map{
@@ -213,7 +241,7 @@ func MobileSyncApp(c *fiber.Ctx) error {
 	}
 
 	// check if the app already exist
-	existingApp, err := repos.FindAppByPackageName(payload.PackageName, userID)
+	existingApp, err := repos.FindAppByPackageName(payload.PackageName, userID, payload.DeviceID)
 	if existingApp == nil || err != nil { // app info is new
 		url, err := utils.UploadImages(payload.Icon, payload.PackageName)
 		if err != nil {
@@ -250,9 +278,16 @@ func MobileSyncApp(c *fiber.Ctx) error {
 
 func MobileGetApps(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
+	deviceID := c.Query("device_id", "")
+
+	if deviceID == "" {
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusNotFound,
+		})
+	}
 
 	// check if the device already exist
-	devices, err := repos.FindApps(userID)
+	devices, err := repos.FindApps(userID, deviceID)
 	if err != nil {
 		log.Printf("Failed to get apps: %v", err)
 		return c.JSON(fiber.Map{
@@ -296,8 +331,15 @@ func MobileCreateRequestMessage(c *fiber.Ctx) error {
 
 func MobileGetRequestMessages(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
+	deviceID := c.Params("id")
 
-	messages, err := repos.FindRequestMessages(userID)
+	if deviceID == "" {
+		return c.JSON(fiber.Map{
+			"status": fiber.StatusNotFound,
+		})
+	}
+
+	messages, err := repos.FindRequestMessages(userID, deviceID)
 	if err != nil {
 		log.Printf("Failed to get request messages: %v", err)
 		return c.JSON(fiber.Map{

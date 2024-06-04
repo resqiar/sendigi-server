@@ -69,9 +69,9 @@ func WebUpdateApps(c *fiber.Ctx) error {
 
 func SendStateToMobile(userID string, payload *dtos.AppInfoInput) error {
 	// get device information
-	devices, err := repos.FindDevices(userID)
+	device, err := repos.FindDevice(userID, payload.DeviceID)
 	if err != nil {
-		log.Printf("[Queue] Failed to get devices: %v", err)
+		log.Printf("[Queue] Failed to get device: %v", err)
 		return err
 	}
 
@@ -81,7 +81,7 @@ func SendStateToMobile(userID string, payload *dtos.AppInfoInput) error {
 		return err
 	}
 
-	q, ctx, cancel, err := configs.InitMobileQueue(ch, userID, devices[0].ID)
+	q, ctx, cancel, err := configs.InitMobileQueue(ch, userID, device.ID)
 	if err != nil {
 		log.Printf("[Queue] Failed to init queue: %v", err)
 		return err
@@ -168,7 +168,7 @@ func MessageMobile(c *fiber.Ctx) error {
 
 	// if payload is include a lock
 	if payload.LockStatus {
-		err := repos.SetAppLockByPackageName(payload.PackageName, userID)
+		err := repos.SetAppLockByPackageName(payload.PackageName, userID, payload.DeviceID)
 		if err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
@@ -176,7 +176,7 @@ func MessageMobile(c *fiber.Ctx) error {
 			})
 		}
 	} else { // otherwise reset
-		err := repos.ResetAppLockByPackageName(payload.PackageName, userID)
+		err := repos.ResetAppLockByPackageName(payload.PackageName, userID, payload.DeviceID)
 		if err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
@@ -185,7 +185,7 @@ func MessageMobile(c *fiber.Ctx) error {
 		}
 	}
 
-	appInfo, err := repos.FindAppByPackageName(payload.PackageName, userID)
+	appInfo, err := repos.FindAppByPackageName(payload.PackageName, userID, payload.DeviceID)
 	if err != nil {
 		log.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
@@ -218,6 +218,7 @@ func MessageMobile(c *fiber.Ctx) error {
 		DateLocked:      appInfo.DateLocked.String,
 		TimeStartLocked: appInfo.TimeStartLocked.String,
 		TimeEndLocked:   appInfo.TimeEndLocked.String,
+		DeviceID:        appInfo.DeviceID,
 	}
 
 	payloadChan <- State{
@@ -241,9 +242,9 @@ func MessageMobile(c *fiber.Ctx) error {
 
 func SendMessageToMobile(userID string, payload *dtos.MessageInput) error {
 	// get device information
-	devices, err := repos.FindDevices(userID)
+	device, err := repos.FindDevice(userID, payload.DeviceID)
 	if err != nil {
-		log.Printf("[Queue] Failed to get devices: %v", err)
+		log.Printf("[Queue] Failed to get device: %v", err)
 		return err
 	}
 
@@ -253,7 +254,7 @@ func SendMessageToMobile(userID string, payload *dtos.MessageInput) error {
 		return err
 	}
 
-	q, ctx, cancel, err := configs.InitMessageQueue(ch, userID, devices[0].ID)
+	q, ctx, cancel, err := configs.InitMessageQueue(ch, userID, device.ID)
 	if err != nil {
 		log.Printf("[Queue] Failed to init queue: %v", err)
 		return err

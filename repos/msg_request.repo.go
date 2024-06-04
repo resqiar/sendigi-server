@@ -28,15 +28,15 @@ func CreateRequestMessage(payload *dtos.RequestMessageInput, userID string) erro
 	return nil
 }
 
-func FindRequestMessages(userID string) ([]entities.RequestMessage, error) {
+func FindRequestMessages(userID string, deviceID string) ([]entities.RequestMessage, error) {
 	var requestMessages []entities.RequestMessage
 
 	SQL := `
 		SELECT
             rm.id, rm.device_id, rm.package_name, rm.message, rm.created_at, ai.icon, ai.name, ai.lock_status
-        FROM request_messages AS rm JOIN app_info AS ai ON rm.package_name = ai.package_name WHERE rm.author_id = $1 ORDER BY rm.created_at DESC;
+        FROM request_messages AS rm JOIN app_info AS ai ON rm.package_name = ai.package_name WHERE rm.author_id = $1 AND rm.device_id = $2 ORDER BY rm.created_at DESC;
     `
-	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID)
+	rows, err := configs.DB_POOL.Query(context.Background(), SQL, userID, deviceID)
 	defer rows.Close()
 	if err != nil {
 		return nil, err
